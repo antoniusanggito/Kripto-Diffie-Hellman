@@ -1,5 +1,4 @@
 # Coret-coret TP
-import math
 from random import randrange
 
 # Could use gmpy2 for faster big number processing
@@ -49,10 +48,10 @@ def next_prime(num):
         num += 2
     return num
 
-# q = num(30548218132221098119)
-random_q = num(randrange(10000000000000000000, 999999999999999999999999999999)) # random 20-30 digit
+random_q = num(randrange(10000000000000000000, 99999999999999999999)) # random 20-30 digit
 print('Init random q:', random_q)
 q = next_prime(random_q)
+# q = next_prime(num(9131957573541077876047273))
 print('q:', q)
 
 ## Finding a
@@ -63,22 +62,13 @@ def is_primitive_root(s, num, q):
             return False
     return True
 
-# Pollard Rho (working)
+# Wheel Factorization with Pollard's Rho? (wrong result)
 # https://stackoverflow.com/questions/51533621/prime-factorization-with-large-numbers-in-python
-def factors(n, b2=-1, b1=10000): # 2,3,5-wheel, then rho
-    def gcd(a,b): # euclid's algorithm
-        if b == 0: return a
-        return gcd(b, a%b)
-    def insertSorted(x, xs): # linear search
-        i, ln = 0, len(xs)
-        while i < ln and xs[i] < x: i += 1
-        xs.insert(i,x)
-        return xs
-    if -1 <= n <= 1: return [n]
-    if n < -1: return [-1] + factors(-n)
+def factors(n, b1=10000): # 2,3,5-wheel, then rho
     wheel = [1,2,2,4,2,4,2,4,6,2,6]
     w, f, fs = 0, 2, set()
-    while f*f <= n and f < b1:
+    # while f*f <= n and f < b1:
+    while f*f <= n:
         while n % f == 0:
             fs.add(num(f))
             n /= f
@@ -88,33 +78,43 @@ def factors(n, b2=-1, b1=10000): # 2,3,5-wheel, then rho
     fs.add(num(n))
     return fs
 
-# # Trial Division
-# # https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
-# def findPrimefactors(s, n) :
-#     while (n % 2 == 0) :
-#         s.add(num(2))
-#         n = n // 2
-#     for i in range(3, int(math.sqrt(n))+1, 2):
-#         while (n % i == 0) :
-#             s.add(num(i))
-#             n = n // i
-#     if (n > 2) :
-#         s.add(n)
+# Trial Division with Wheel Factorization (2, 3, 5)
+# https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
+# https://cp-algorithms.com/algebra/factorization.html#wheel-factorization
+def factors_trial_division_wheel235(n) :
+    s = set()
+    for d in [2, 3, 5]:
+        while (n % d == 0) :
+            s.add(num(d))
+            n = n // d
+    inc = [4, 2, 4, 2, 4, 6, 2, 6] # wheel increment pattern
+    i = 0
+    d = 7
+    while (d*d <= n):
+        while (n % d == 0) :
+            s.add(num(d))
+            n = n // d
+        if (i == 8): i = 0
+        d += inc[i]
+        i += 1
+    if (n > 1) :
+        s.add(n)
+    return s
 
-# # Pollard Rho
+# # Pollard's Rho (not working, only for 1 factor)
 # # https://stackoverflow.com/questions/22827876/optimizing-a-prime-number-factorization-algorithm
-# def factor(n, c):
+# def factors_pollard_rho(n, c):
 #     f = lambda x: (x*x+c) % n
 #     t, h, d = 2, 2, 1
 #     while d == 1:
 #         t = f(t); h = f(f(h)); d = math.gcd(t-h, n)
 #     if d == n:
-#         return factor(n, c+1)
+#         return factors_pollard_rho(n, c+1)
 #     return d
 
 def next_primitive_root(num, q):
-    # findPrimefactors(s, q-1)  # trial division
-    s = factors(q-1)            # pollard rho
+    s = factors_trial_division_wheel235(q-1)    # trial division with wheel
+    # s = factors(q-1)                          # wheel with rho factorization?
     print('Prime factor:', s)
 
     while num < q:
