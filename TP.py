@@ -56,7 +56,6 @@ def next_prime(n):
 random_q = num(randrange(10000000000000000000, 9999999999999999999999999)) 
 print('Init random q:', random_q)
 q = next_prime(random_q)
-# q = next_prime(num(5967102053450694655693184))
 print('q:', q)
 
 ## Finding a
@@ -76,7 +75,7 @@ def is_primitive_root(fs, n, q):
 #     while f*f <= n:
 #         while n % f == 0:
 #             fs.add(num(f))
-#             n /= f
+#             n = n // f
 #         f, w = f + wheel[w], w+1
 #         if w == 11: w = 3
 #     if n == 1: return fs
@@ -87,45 +86,58 @@ def is_primitive_root(fs, n, q):
 # https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
 # https://cp-algorithms.com/algebra/factorization.html#wheel-factorization
 def factors_trial_division_wheel(n) :
-    s = set()
+    fs = set()
 
     # Faktorkan 2,3,5,7 dulu
     for d in [2, 3, 5, 7]:
         while (n % d == 0) :
-            s.add(num(d))
+            fs.add(num(d))
             n = n // d
     # inc = [4, 2, 4, 2, 4, 6, 2, 6] # wheel increment pattern 2,3,5
     inc = [2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10] # wheel increment pattern 2,3,5,7
 
     # Trial division dengan inc
     i = 0
-    d = 11
+    d = num(11)
     while (d*d <= n):
         while (n % d == 0) :
-            s.add(num(d))
+            fs.add(num(d))
             n = n // d
         if (i == 48): i = 0
         d += inc[i]
         i += 1
 
     if (n > 1) :
-        s.add(n)
-    return s
+        fs.add(n)
+    return fs
 
-# # Pollard's Rho (not working, only for 1 factor)
-# # https://stackoverflow.com/questions/22827876/optimizing-a-prime-number-factorization-algorithm
-# def factors_pollard_rho(n, c):
-#     f = lambda x: (x*x+c) % n
-#     t, h, d = 2, 2, 1
-#     while d == 1:
-#         t = f(t); h = f(f(h)); d = math.gcd(t-h, n)
-#     if d == n:
-#         return factors_pollard_rho(n, c+1)
-#     return d
+# Precompute Primes, no factorization
+# https://cp-algorithms.com/algebra/factorization.html#precomputed-primes
+def factors_precompute_primes(n):
+    fs = set()
+
+    # Buka file list primes <= 193617751 (sqrt(37487833502298001))
+    with open('./primes.txt', 'r') as f:
+        primes = f.read().split(' ')
+        primes.pop()
+        primes = list(map(int, primes))
+
+    # Trial division dengan precomputed primes
+    for d in primes:
+        if (d*d > n):
+            break
+        while (n % d == 0):
+            fs.add(num(d))
+            n = n // d
+
+    if (n > 1) :
+        fs.add(num(n))
+
+    return fs
 
 def next_primitive_root(n, q):
-    fs = factors_trial_division_wheel(q-1)    # trial division with wheel
-    # fs = factors(q-1)                          # wheel with rho factorization?
+    # fs = factors_trial_division_wheel(q-1)    # trial division with wheel
+    fs = factors_precompute_primes(q-1)         # precomute primes
     print('Prime factor:', fs)
 
     # Cek primitive root satu persatu
@@ -136,7 +148,7 @@ def next_primitive_root(n, q):
         n += 1
 
 # Cari a dimulai dari 2
-a = next_primitive_root(2, q)
+a = next_primitive_root(num(2), q)
 print('a:', a)
 
 # Input private key
