@@ -34,7 +34,7 @@ def is_prime_miller_rabin(n, t=10):
 
     # Cek sebanyak t kali dengan a random beda
     for _ in range(t):
-        a = randrange(1, n-1)
+        a = randrange(2, n-1)
         if not check(a, k, q, n):
             return False
     return True
@@ -53,9 +53,11 @@ def next_prime(n):
     return n
 
 # Randomize 20-25 digit
-random_q = num(randrange(10000000000000000000, 9999999999999999999999999)) 
+random_q = num(randrange(10000000000000000000, 10000000000000000000000000)) 
 print('Init random q:', random_q)
 q = next_prime(random_q)
+# q = next_prime(num(4821400796452833382408514)) # contoh edge case faktor: 2, 196873223, 12244937942761351, wheel cepet
+# q = next_prime(num(9187872044499284894799247)) # contoh edge case faktor: 7243, 23491064283009610543, 2, 3, wheel lama
 print('q:', q)
 
 ## Finding a
@@ -65,22 +67,6 @@ def is_primitive_root(fs, n, q):
         if (pow(n, phi // it, q) == 1):
             return False
     return True
-
-# # Wheel Factorization with Pollard's Rho? (wrong result)
-# # https://stackoverflow.com/questions/51533621/prime-factorization-with-large-numbers-in-python
-# def factors(n, b1=10000): # 2,3,5-wheel, then rho
-#     wheel = [1,2,2,4,2,4,2,4,6,2,6]
-#     w, f, fs = 0, 2, set()
-#     # while f*f <= n and f < b1:
-#     while f*f <= n:
-#         while n % f == 0:
-#             fs.add(num(f))
-#             n = n // f
-#         f, w = f + wheel[w], w+1
-#         if w == 11: w = 3
-#     if n == 1: return fs
-#     fs.add(num(n))
-#     return fs
 
 # Trial Division with Wheel Factorization (2,3,5,7)
 # https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
@@ -93,16 +79,24 @@ def factors_trial_division_wheel(n) :
         while (n % d == 0) :
             fs.add(num(d))
             n = n // d
-    # inc = [4, 2, 4, 2, 4, 6, 2, 6] # wheel increment pattern 2,3,5
     inc = [2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10] # wheel increment pattern 2,3,5,7
 
     # Trial division dengan inc
     i = 0
     d = num(11)
+    prime_checked_flag = False
     while (d*d <= n):
+        if (not prime_checked_flag):
+            if is_prime_miller_rabin(n):
+                print('PRIME!', n, flush=True)
+                break
+            else:
+                print('NOT PRIME, KEEP CLIMBING', n, flush=True)
+                prime_checked_flag = True
         while (n % d == 0) :
             fs.add(num(d))
             n = n // d
+            prime_checked_flag = False
         if (i == 48): i = 0
         d += inc[i]
         i += 1
@@ -111,33 +105,33 @@ def factors_trial_division_wheel(n) :
         fs.add(n)
     return fs
 
-# Precompute Primes, no factorization
-# https://cp-algorithms.com/algebra/factorization.html#precomputed-primes
-def factors_precompute_primes(n):
-    fs = set()
+# # Precompute Primes, no factorization
+# # https://cp-algorithms.com/algebra/factorization.html#precomputed-primes
+# def factors_precompute_primes(n):
+#     fs = set()
 
-    # Buka file list primes <= 193617751 (sqrt(37487833502298001))
-    with open('./primes.txt', 'r') as f:
-        primes = f.read().split(' ')
-        primes.pop()
-        primes = list(map(int, primes))
+#     # Buka file list primes <= 193617751 (sqrt(37487833502298001))
+#     with open('./primes.txt', 'r') as f:
+#         primes = f.read().split(' ')
+#         primes.pop()
+#         primes = list(map(int, primes))
 
-    # Trial division dengan precomputed primes
-    for d in primes:
-        if (d*d > n):
-            break
-        while (n % d == 0):
-            fs.add(num(d))
-            n = n // d
+#     # Trial division dengan precomputed primes
+#     for d in primes:
+#         if (d*d > n):
+#             break
+#         while (n % d == 0):
+#             fs.add(num(d))
+#             n = n // d
 
-    if (n > 1) :
-        fs.add(num(n))
+#     if (n > 1) :
+#         fs.add(num(n))
 
-    return fs
+#     return fs
 
 def next_primitive_root(n, q):
-    # fs = factors_trial_division_wheel(q-1)    # trial division with wheel
-    fs = factors_precompute_primes(q-1)         # precomute primes
+    fs = factors_trial_division_wheel(q-1)    # trial division with wheel
+    # fs = factors_precompute_primes(q-1)         # precompute primes
     print('Prime factor:', fs)
 
     # Cek primitive root satu persatu
